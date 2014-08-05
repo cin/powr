@@ -1,7 +1,6 @@
 library("rjson")
 
-load <- function() {
-  url <- "http://games.espn.go.com/ffl/api/v2/teams?leagueId=709331&seasonId=2013"
+load <- function(url) {
   res <- readLines(url, warn = "F")
   fromJSON(res)
 }
@@ -25,9 +24,33 @@ powr <- function(js, numGames) {
   powr0(js, numGames)
 }
 
-powrSeason <- function() {
-  js <- load()
-  for (i in 1:16) powr(js, i)
+powrSeason <- function(js) {
+  myprks <- data.frame()
+  for (i in 1:16) {
+    print(sprintf("Week %d", i))
+    prks <- powr(js, i)
+    print(prks[with(prks, order(-powerRanking)),])
+    cols <- prks[["powerRanking"]]
+    myprks <- rbind(myprks, cols)
+    if (i == 1)
+      colnames(myprks) <- prks[["team.teamAbbrev"]]
+  }
+  myprks
+}
+
+plotPowr <- function(prks) {
+  rng <- range(prks[3:16,])
+  shps <- as.integer(runif(10, 21, 25))
+  clrs <- c("blue", "red", "forestgreen", "darkslateblue", "orange", "saddlebrown", "yellow3", "mediumpurple4", "olivedrab4", "hotpink2")
+  plot(prks[3:16,1], type = "o", col = clrs[[1]], pch = shps[[1]], axes = FALSE, ann = FALSE, ylim = rng)
+  title(main = "Power Rankings by Week")
+  title(xlab = "Week")
+  title(ylab = "Power Ranking")
+  axis(1, at = 1:14, labels = 3:16)
+  axis(2)
+  box()
+  for (p in 2:10) lines(prks[3:16,p], type = "o", col = clrs[[p]], pch = shps[[p]])
+  legend(1, rng[2], colnames(prks), col = clrs, cex = 0.5, pch = shps, lty = 1:2)
 }
 
 calcPowr <- function(numGames, team, scores, oppScores, wlt) {
@@ -47,14 +70,8 @@ calcPowr <- function(numGames, team, scores, oppScores, wlt) {
   data.frame(team$teamAbbrev, team$teamId, tp, tpa, minScore, maxScore, wp, wins, losses, ties, avgScore, avgOppScore, powerRanking)
 }
 
-printPowr <- function(r) {
-  out <- sprintf("%15s, %2d, %7.2f, %7.2f, %7.2f, %7.2f, %5.2f, %2d - %2d - %2d, %7.2f, %7.2f, %7.2f", 
-    substr(r[[1]][[1]], 1, 5), r[[2]], r[[3]], r[[4]], r[[5]], r[[6]], r[[7]], r[[8]], r[[9]], r[[10]], r[[11]], r[[12]], r[[13]])
-  print(out)
-}
-
 powr0 <- function(js, numGames) {
-  wtf <- data.frame(check.rows = FALSE, check.names = FALSE, stringsAsFactors = FALSE)
+  powerRankings <- data.frame()
   for (team in js$teams) {
     ts <- 0
     wlt <- list(0, 0, 0)
@@ -68,8 +85,7 @@ powr0 <- function(js, numGames) {
       oppScores <- c(unlist(oppScores), res[[3]])
     }
     pr <- calcPowr(numGames, team, scores, oppScores, wlt)
-    wtf <- rbind(wtf, pr)
-#     printPowr(pr)
+    powerRankings <- rbind(powerRankings, pr)
   }
-  print(wtf)
+  powerRankings
 }
