@@ -13,12 +13,46 @@ wasWLT <- function (isHome, matchup) {
   else 2
 }
 
-# getGameResult <- function(matchup) {
-#   
-# }
+getGameResult <- function(team, matchup) {
+  isHome <- matchup$homeTeamId == team$teamId
+  gmRes <- wasWLT(isHome, matchup)
+  score <- if (isHome) matchup$homeTeamScores else matchup$awayTeamScores
+  oppScore <- if (isHome) matchup$awayTeamScores else matchup$homeTeamScores
+  c(gmRes, score, oppScore)
+}
 
 powr <- function(js, numGames) {
-  wtf <- matrix()
+  powr0(js, numGames)
+}
+
+powrSeason <- function() {
+  js <- load()
+  for (i in 1:16) powr(js, i)
+}
+
+calcPowr <- function(numGames, team, scores, oppScores, wlt) {
+  tw <- wlt[[1]]
+  wp <- tw / numGames
+  mm <- unlist(range(scores))
+  tp <- sum(scores)
+  tpa <- sum(oppScores)
+  avgScore <- tp / numGames
+  avgOppScore <- tpa / numGames
+  minScore <- mm[[1]]
+  maxScore <- mm[[2]]
+  powerRanking <- ((avgScore * 6) + ((minScore + maxScore) * 2) + (wp * 400))/10
+  data.frame(team$teamAbbrev, tp, tpa, minScore, maxScore, wp, wlt, avgScore, avgOppScore, powerRanking)
+}
+
+printPowr <- function(r) {
+  out <- sprintf("%15s, %7.2f, %7.2f, %7.2f, %7.2f, %5.2f, %2d - %2d - %2d, %7.2f, %7.2f, %7.2f", 
+    substr(r[[1]][[1]], 1, 5), r[[2]], r[[3]],
+    r[[4]], r[[5]], r[[6]], r[[7]][[1]], r[[8]][[1]], r[[9]][[1]], r[[10]], r[[11]], r[[12]])
+  print(out)
+}
+
+powr0 <- function(js, numGames) {
+#   wtf <- data.frame(names = c("team", "total points for", "total points against", "minScore", "maxScore", "winPercent", "record", "avgScore", "avgOppScore", "powerRankin"))
   for (team in js$teams) {
     ts <- 0
     wlt <- list(0, 0, 0)
@@ -26,32 +60,13 @@ powr <- function(js, numGames) {
     oppScores <- list()
     for (i in 1:numGames) {
       matchup <- team$scheduleItems[[i]]$matchups[[1]]
-      isHome <- matchup$homeTeamId == team$teamId
-      gmRes <- wasWLT(isHome, matchup)
-      wlt[[gmRes]] <- wlt[[gmRes]] + 1
-      score <- if (isHome) matchup$homeTeamScores else matchup$awayTeamScores
-      scores <- c(unlist(scores), score)
-      oppScore <- if (isHome) matchup$awayTeamScores else matchup$homeTeamScores
-      oppScores <- c(unlist(oppScores), oppScore)
+      res <- getGameResult(team, matchup)
+      scores <- c(unlist(scores), res[[2]])
+      oppScores <- c(unlist(oppScores), res[[3]])
+      wlt[[res[[1]]]] <- wlt[[res[[1]]]] + 1
     }
-    tw <- wlt[[1]]
-    wp <- tw / numGames
-    mm <- unlist(range(scores))
-    tp <- sum(scores)
-    tpa <- sum(oppScores)
-    avgScore <- tp / numGames
-    avgOppScore <- tpa / numGames
-    powerRanking <- ((avgScore * 6) + ((mm[[1]] + mm[[2]])*2) + (wp * 400))/10
-    vv <- c(substr(team$teamAbbrev, 1, 5), tp, tpa, unlist(mm), wp, unlist(wlt), avgScore, avgOppScore, powerRanking)
-#     wtf <- rbind(wtf, vv)
-    out <- sprintf("%15s, %7.2f, %7.2f, %7.2f, %7.2f, %5.2f, %2d - %2d - %2d, %7.2f, %7.2f, %7.2f", 
-      substr(team$teamAbbrev, 1, 5), 
-      tp, tpa,
-      mm[[1]], mm[[2]], 
-      wp, 
-      wlt[[1]], wlt[[2]], wlt[[3]],
-      avgScore, avgOppScore,
-      powerRanking)
-    print(out)
+    pr <- calcPowr(numGames, team, scores, oppScores, wlt)
+#     wtf <- rbind(wtf, pr)
+    printPowr(pr)
   }
 }
