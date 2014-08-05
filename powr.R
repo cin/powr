@@ -6,51 +6,38 @@ load <- function() {
   fromJSON(res)
 }
 
-# wlt <- list(0, 0, 0)
+wasWLT <- function (isHome, matchup) {
+  x <- if (isHome) c(matchup$homeTeamScores, matchup$awayTeamScores) else c(matchup$awayTeamScores, matchup$homeTeamScores)
+  if (x[[1]] > x[[2]]) 1
+  else if (x[[1]] == x[[2]]) 3
+  else 2
+}
 
-# addWLT <- function (isThisTeamHome, mup) {
-#   if (isThisTeamHome) {
-#     if (mup$homeTeamScores > mup$awayTeamScores) wlt[[1]] = wlt[[1]] + 1
-#     else if (mup$homeTeamScores == mup$awayTeamScores) wlt[[3]] = wlt[[3]] + 1
-#     else wlt[[2]] = wlt[[2]] + 1
-#   } else {
-#     if (mup$homeTeamScores < mup$awayTeamScores) wlt[[1]] = wlt[[1]] + 1
-#     else if (mup$homeTeamScores == mup$awayTeamScores) wlt[[3]] = wlt[[3]] + 1
-#     else wlt[[2]] = wlt[[2]] + 1
-#   }
+# getGameResult <- function(matchup) {
+#   
 # }
 
-foo <- function(js, numGames) {
+powr <- function(js, numGames) {
   wtf <- matrix()
   for (team in js$teams) {
     ts <- 0
     wlt <- list(0, 0, 0)
-    i <- 1
-    thisTeamsScores <- list()
+    scores <- list()
     oppScores <- list()
-    while (i <= numGames) {
-      mup <- team$scheduleItems[[i]]$matchups[[1]]
-      isThisTeamHome <- mup$homeTeamId == team$teamId
-#       addWLT(isThisTeamHome, mup)
-      if (isThisTeamHome) {
-        if (mup$homeTeamScores > mup$awayTeamScores) wlt[[1]] = wlt[[1]] + 1
-        else if (mup$homeTeamScores == mup$awayTeamScores) wlt[[3]] = wlt[[3]] + 1
-        else wlt[[2]] = wlt[[2]] + 1
-      } else {
-        if (mup$homeTeamScores < mup$awayTeamScores) wlt[[1]] = wlt[[1]] + 1
-        else if (mup$homeTeamScores == mup$awayTeamScores) wlt[[3]] = wlt[[3]] + 1
-        else wlt[[2]] = wlt[[2]] + 1
-      }
-      thisTeamsScore <- if (isThisTeamHome) mup$homeTeamScores else mup$awayTeamScores
-      oppScore <- if (isThisTeamHome) mup$awayTeamScores else mup$homeTeamScores
-      oppScores = c(unlist(oppScores), oppScore)
-      thisTeamsScores = c(unlist(thisTeamsScores), thisTeamsScore)
-      i = i + 1
+    for (i in 1:numGames) {
+      matchup <- team$scheduleItems[[i]]$matchups[[1]]
+      isHome <- matchup$homeTeamId == team$teamId
+      gmRes <- wasWLT(isHome, matchup)
+      wlt[[gmRes]] <- wlt[[gmRes]] + 1
+      score <- if (isHome) matchup$homeTeamScores else matchup$awayTeamScores
+      scores <- c(unlist(scores), score)
+      oppScore <- if (isHome) matchup$awayTeamScores else matchup$homeTeamScores
+      oppScores <- c(unlist(oppScores), oppScore)
     }
     tw <- wlt[[1]]
     wp <- tw / numGames
-    mm <- unlist(range(thisTeamsScores))
-    tp <- sum(thisTeamsScores)
+    mm <- unlist(range(scores))
+    tp <- sum(scores)
     tpa <- sum(oppScores)
     avgScore <- tp / numGames
     avgOppScore <- tpa / numGames
