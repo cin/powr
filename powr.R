@@ -41,18 +41,20 @@ calcPowr <- function(numGames, team, scores, oppScores, wlt) {
   minScore <- mm[[1]]
   maxScore <- mm[[2]]
   powerRanking <- ((avgScore * 6) + ((minScore + maxScore) * 2) + (wp * 400))/10
-  data.frame(team$teamAbbrev, tp, tpa, minScore, maxScore, wp, wlt, avgScore, avgOppScore, powerRanking)
+  wins <- wlt[[1]]
+  losses <- wlt[[2]]
+  ties <- wlt[[3]]
+  data.frame(team$teamAbbrev, team$teamId, tp, tpa, minScore, maxScore, wp, wins, losses, ties, avgScore, avgOppScore, powerRanking)
 }
 
 printPowr <- function(r) {
-  out <- sprintf("%15s, %7.2f, %7.2f, %7.2f, %7.2f, %5.2f, %2d - %2d - %2d, %7.2f, %7.2f, %7.2f", 
-    substr(r[[1]][[1]], 1, 5), r[[2]], r[[3]],
-    r[[4]], r[[5]], r[[6]], r[[7]][[1]], r[[8]][[1]], r[[9]][[1]], r[[10]], r[[11]], r[[12]])
+  out <- sprintf("%15s, %2d, %7.2f, %7.2f, %7.2f, %7.2f, %5.2f, %2d - %2d - %2d, %7.2f, %7.2f, %7.2f", 
+    substr(r[[1]][[1]], 1, 5), r[[2]], r[[3]], r[[4]], r[[5]], r[[6]], r[[7]], r[[8]], r[[9]], r[[10]], r[[11]], r[[12]], r[[13]])
   print(out)
 }
 
 powr0 <- function(js, numGames) {
-#   wtf <- data.frame(names = c("team", "total points for", "total points against", "minScore", "maxScore", "winPercent", "record", "avgScore", "avgOppScore", "powerRankin"))
+  wtf <- data.frame(check.rows = FALSE, check.names = FALSE, stringsAsFactors = FALSE)
   for (team in js$teams) {
     ts <- 0
     wlt <- list(0, 0, 0)
@@ -61,12 +63,13 @@ powr0 <- function(js, numGames) {
     for (i in 1:numGames) {
       matchup <- team$scheduleItems[[i]]$matchups[[1]]
       res <- getGameResult(team, matchup)
+      wlt[[res[[1]]]] <- wlt[[res[[1]]]] + 1
       scores <- c(unlist(scores), res[[2]])
       oppScores <- c(unlist(oppScores), res[[3]])
-      wlt[[res[[1]]]] <- wlt[[res[[1]]]] + 1
     }
     pr <- calcPowr(numGames, team, scores, oppScores, wlt)
-#     wtf <- rbind(wtf, pr)
-    printPowr(pr)
+    wtf <- rbind(wtf, pr)
+#     printPowr(pr)
   }
+  print(wtf)
 }
