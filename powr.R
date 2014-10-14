@@ -1,9 +1,19 @@
 library("rjson")
 library("RColorBrewer")
 
-#js <- load("http://games.espn.go.com/ffl/api/v2/teams?leagueId=709331&seasonId=2014")
-#prks <- powrSeason(js, 4)
-#plotPowr(prks)
+mkUrl <- function(leagueId, leagueYear) {
+  baseUrl <- "http://games.espn.go.com"
+  teamPath <- "/ffl/api/v2/teams"
+  params <- sprintf("?leagueId=%s&seasonId=%d", leagueId, leagueYear)
+  sprintf("%s%s%s", baseUrl, teamPath, params)
+}
+
+genPowr <- function(leagueId, leagueYear, weekNum) {
+  url <- mkUrl(leagueId, leagueYear)
+  js <- load(url)
+  prks <- powrSeason(js, weekNum)
+  plotPowr(prks)
+}
 
 load <- function(url) {
   res <- readLines(url, warn = "F")
@@ -32,9 +42,9 @@ powr <- function(js, week) {
 powrSeason <- function(js, numGames = 16) {
   myprks <- data.frame()
   for (week in 1:numGames) {
-    print(sprintf("Week %d", week))
+    #print(sprintf("Week %d", week))
     prks <- powr(js, week)
-    print(prks[with(prks, order(-powerRanking)),])
+    #print(prks[with(prks, order(-powerRanking)),])
     cols <- prks[["powerRanking"]]
     myprks <- rbind(myprks, cols)
     if (week == 1) colnames(myprks) <- prks[["team.teamAbbrev"]]
@@ -44,7 +54,8 @@ powrSeason <- function(js, numGames = 16) {
 
 plotPowr <- function(prks) {
   numWeeks <- nrow(prks)
-  rng <- range(prks[3:numWeeks,])
+  numTeams <- ncol(prks[1,])
+  rng <- range(prks[3:numWeeks,]) # doesn't make sense to show power rankings before week 3
   shps <- as.integer(runif(10, 21, 25))
   clrs <- brewer.pal(ncol(prks), "Paired")
   plot(prks[3:numWeeks,1], type = "o", col = clrs[[1]], pch = shps[[1]], axes = FALSE, ann = FALSE, ylim = rng)
@@ -54,7 +65,7 @@ plotPowr <- function(prks) {
   axis(1, at = 1:14, labels = 3:16)
   axis(2)
   box()
-  for (p in 2:10) lines(prks[3:numWeeks,p], type = "o", col = clrs[[p]], pch = shps[[p]])
+  for (p in 2:numTeams) lines(prks[3:numWeeks,p], type = "o", col = clrs[[p]], pch = shps[[p]])
   legend(1.9, 135, colnames(prks), col = clrs, cex = 0.6, pch = shps, lty = 1:2)
 }
 
@@ -97,18 +108,14 @@ powr0 <- function(js, numGames) {
   powerRankings
 }
 
-breakdown <- function(prks) {
-  mypf <- data.frame()
-  for (i in 1:length(prks) + 1) {
-    print(sprintf("Week %d", i))
-    print(prks[with(prks, order(-pf)),])
-    cols <- prks[["pf"]]
-    mypf <- rbind(mypf, cols)
-    if (i == 1) colnames(mypf) <- prks[["team.teamAbbrev"]]
-  }
-  mypf
-}
-
-# js <- load("http://games.espn.go.com/ffl/api/v2/teams?leagueId=709331&seasonId=2014")
-# foo <- powrSeason(js, 3)
-# plotPowr(foo)
+# breakdown <- function(prks) {
+#   mypf <- data.frame()
+#   for (i in 1:length(prks) + 1) {
+#     #print(sprintf("Week %d", i))
+#     #print(prks[with(prks, order(-pf)),])
+#     cols <- prks[["pf"]]
+#     mypf <- rbind(mypf, cols)
+#     if (i == 1) colnames(mypf) <- prks[["team.teamAbbrev"]]
+#   }
+#   mypf
+# }
