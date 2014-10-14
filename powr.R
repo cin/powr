@@ -1,6 +1,10 @@
 library("rjson")
 library("RColorBrewer")
 
+#js <- load("http://games.espn.go.com/ffl/api/v2/teams?leagueId=709331&seasonId=2014")
+#prks <- powrSeason(js, 4)
+#plotPowr(prks)
+
 load <- function(url) {
   res <- readLines(url, warn = "F")
   fromJSON(res)
