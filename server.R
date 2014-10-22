@@ -1,9 +1,24 @@
 library(shiny)
 
+library("ggmap")
 source("powr.R")
 
 shinyServer(function(input, output) {
   output$powr <- renderPlot({
-    genPowr(input$leagueId, input$leagueYear, 5)
+    genPowr(input$leagueId, input$leagueYear, input$leagueWeek)
+  })
+  
+  observe({
+    input$exportImage
+    isolate({
+      if (input$exportImage[1] == 0)
+        return;
+      
+      fn <- sprintf("powr_%s_%sw%s.png", input$leagueId, input$leagueYear, input$leagueWeek)
+      print(sprintf("exporting image - %s", fn))
+      png(fn, 1280, 826)
+      genPowr(input$leagueId, input$leagueYear, input$leagueWeek)
+      dev.off()
+    })
   })
 })

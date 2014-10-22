@@ -66,7 +66,7 @@ plotPowr <- function(prks) {
   axis(2)
   box()
   for (p in 2:numTeams) lines(prks[3:numWeeks,p], type = "o", col = clrs[[p]], pch = shps[[p]])
-  legend(1.9, 135, colnames(prks), col = clrs, cex = 0.6, pch = shps, lty = 1:2)
+  legend(1.9, 135, colnames(prks), col = clrs, cex = 1.5, pch = shps, lty = 1:2)
 }
 
 calcPowr <- function(week, team, scores, oppScores, wlt) {
