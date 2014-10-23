@@ -8,10 +8,10 @@ mkUrl <- function(leagueId, leagueYear) {
   sprintf("%s%s%s", baseUrl, teamPath, params)
 }
 
-genPowr <- function(leagueId, leagueYear, weekNum) {
+genPowr <- function(leagueId, leagueYear, weekNum, avgScoreWeight = 6, hiloWeight = 2, wpWeight = 2) {
   url <- mkUrl(leagueId, leagueYear)
   js <- load(url)
-  prks <- powrSeason(js, weekNum)
+  prks <- powrSeason(js, weekNum, avgScoreWeight, hiloWeight, wpWeight)
   plotPowr(prks)
 }
 
@@ -35,15 +35,15 @@ getGameResult <- function(team, matchup) {
   c(gmRes, score, oppScore)
 }
 
-powr <- function(js, week) {
-  powr0(js, week)
+powr <- function(js, week, avgScoreWeight = 6, hiloWeight = 2, wpWeight = 2) {
+  powr0(js, week, avgScoreWeight, hiloWeight, wpWeight)
 }
 
-powrSeason <- function(js, numGames = 16) {
+powrSeason <- function(js, numGames = 16, avgScoreWeight = 6, hiloWeight = 2, wpWeight = 2) {
   myprks <- data.frame()
   for (week in 1:numGames) {
     #print(sprintf("Week %d", week))
-    prks <- powr(js, week)
+    prks <- powr(js, week, avgScoreWeight, hiloWeight, wpWeight)
     #print(prks[with(prks, order(-powerRanking)),])
     cols <- prks[["powerRanking"]]
     myprks <- rbind(myprks, cols)
@@ -69,7 +69,7 @@ plotPowr <- function(prks) {
   legend(1.9, 135, colnames(prks), col = clrs, cex = 1.5, pch = shps, lty = 1:2)
 }
 
-calcPowr <- function(week, team, scores, oppScores, wlt) {
+calcPowr <- function(week, team, scores, oppScores, wlt, avgScoreWeight = 6, hiloWeight = 2, wpWeight = 2) {
   tw <- wlt[[1]]
   wp <- tw / week
   mm <- unlist(range(scores))
@@ -79,7 +79,7 @@ calcPowr <- function(week, team, scores, oppScores, wlt) {
   avgOppScore <- tpa / week
   minScore <- mm[[1]]
   maxScore <- mm[[2]]
-  powerRanking <- ((avgScore * 6) + ((minScore + maxScore) * 2) + (wp * 400))/10
+  powerRanking <- ((avgScore * 6) + ((minScore + maxScore) * 2) + (wp * 200 * wpWeight))/10
   wins <- wlt[[1]]
   losses <- wlt[[2]]
   ties <- wlt[[3]]
@@ -88,7 +88,7 @@ calcPowr <- function(week, team, scores, oppScores, wlt) {
   data.frame(team$teamAbbrev, team$teamId, pf, pa, tpf, tpa, minScore, maxScore, wp, wins, losses, ties, avgScore, avgOppScore, powerRanking)
 }
 
-powr0 <- function(js, numGames) {
+powr0 <- function(js, numGames, avgScoreWeight = 6, hiloWeight = 2, wpWeight = 2) {
   powerRankings <- data.frame()
   for (team in js$teams) {
     ts <- 0
@@ -102,7 +102,7 @@ powr0 <- function(js, numGames) {
       scores <- c(unlist(scores), res[[2]])
       oppScores <- c(unlist(oppScores), res[[3]])
     }
-    pr <- calcPowr(numGames, team, scores, oppScores, wlt)
+    pr <- calcPowr(numGames, team, scores, oppScores, wlt, avgScoreWeight, hiloWeight, wpWeight)
     powerRankings <- rbind(powerRankings, pr)
   }
   powerRankings

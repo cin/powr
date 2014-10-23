@@ -1,11 +1,11 @@
+library(ggmap)
 library(shiny)
 
-library("ggmap")
 source("powr.R")
 
 shinyServer(function(input, output) {
   output$powr <- renderPlot({
-    genPowr(input$leagueId, input$leagueYear, input$leagueWeek)
+    genPowr(input$leagueId, input$leagueYear, input$leagueWeek, input$avgScoreWeight/10, intput$hiloWeight/10, input$wpWeight/10)
   })
   
   observe({
